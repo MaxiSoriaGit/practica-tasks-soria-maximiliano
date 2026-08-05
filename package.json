@@ -1,0 +1,29 @@
+{
+  "name": "practica-tasks-soria-maximiliano",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaxiSoriaGit/practica-tasks-soria-maximiliano.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MaxiSoriaGit/practica-tasks-soria-maximiliano/issues"
+  },
+  "homepage": "https://github.com/MaxiSoriaGit/practica-tasks-soria-maximiliano#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "mysql2": "^3.23.2",
+    "sequelize": "^6.37.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
