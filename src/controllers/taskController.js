@@ -1,9 +1,10 @@
 import Task from '../models/Task.js';
+import User from '../models/User.js';
 
 // Crear tarea
 export const createTask = async (req, res) => {
   try {
-    const { title, description, isComplete } = req.body;
+    const { title, description, isComplete, userId } = req.body;
 
     if (!title || title.trim() === '' || title.length > 100) {
       return res.status(400).json({ message: 'El título es obligatorio y debe tener máximo 100 caracteres' });
@@ -15,12 +16,23 @@ export const createTask = async (req, res) => {
       return res.status(400).json({ message: 'El estado de la tarea debe ser un valor booleano' });
     }
 
+    // NUEVO: no se puede crear una tarea sin usuario
+    if (!userId) {
+      return res.status(400).json({ message: 'El userId es obligatorio para crear una tarea' });
+    }
+
+    // NUEVO: verificar que el usuario exista
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'El usuario indicado no existe' });
+    }
+
     const existingTask = await Task.findOne({ where: { title } });
     if (existingTask) {
       return res.status(400).json({ message: 'Ya existe una tarea con ese título' });
     }
 
-    const newTask = await Task.create({ title, description, isComplete });
+    const newTask = await Task.create({ title, description, isComplete, userId });
     return res.status(201).json({ message: 'Tarea creada con éxito', data: newTask });
   } catch (error) {
     return res.status(500).json({ message: 'Error al crear la tarea', error: error.message });
@@ -30,7 +42,9 @@ export const createTask = async (req, res) => {
 // Obtener todas las tareas
 export const getTasks = async (req, res) => {
   try {
-    const tasks = await Task.findAll();
+    const tasks = await Task.findAll({
+      include: { model: User, attributes: ['id', 'name', 'email'] } // NUEVO
+    });
     return res.status(200).json({ data: tasks });
   } catch (error) {
     return res.status(500).json({ message: 'Error al obtener las tareas', error: error.message });
@@ -41,7 +55,9 @@ export const getTasks = async (req, res) => {
 export const getTaskById = async (req, res) => {
   try {
     const { id } = req.params;
-    const task = await Task.findByPk(id);
+    const task = await Task.findByPk(id, {
+      include: { model: User, attributes: ['id', 'name', 'email'] } // NUEVO
+    });
 
     if (!task) {
       return res.status(404).json({ message: 'Tarea no encontrada' });
@@ -53,7 +69,7 @@ export const getTaskById = async (req, res) => {
   }
 };
 
-// Actualizar tarea
+// Actualizar tarea (SIN CAMBIOS)
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
@@ -88,7 +104,7 @@ export const updateTask = async (req, res) => {
   }
 };
 
-// Eliminar tarea
+// Eliminar tarea (SIN CAMBIOS)
 export const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;

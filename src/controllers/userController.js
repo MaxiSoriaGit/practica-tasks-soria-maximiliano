@@ -1,6 +1,7 @@
 import User from '../models/User.js';
+import Task from '../models/Task.js'; // NUEVO
 
-// Crear usuario
+// Crear usuario (SIN CAMBIOS)
 export const createUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -30,7 +31,9 @@ export const createUser = async (req, res) => {
 // Obtener todos los usuarios
 export const getUsers = async (req, res) => {
   try {
-    const users = await User.findAll();
+    const users = await User.findAll({
+      include: { model: Task } // NUEVO
+    });
     return res.status(200).json({ data: users });
   } catch (error) {
     return res.status(500).json({ message: 'Error al obtener los usuarios', error: error.message });
@@ -41,7 +44,9 @@ export const getUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(id, {
+      include: { model: Task } // NUEVO
+    });
 
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
@@ -53,7 +58,7 @@ export const getUserById = async (req, res) => {
   }
 };
 
-// Actualizar usuario
+// Actualizar usuario (SIN CAMBIOS)
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -88,7 +93,7 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// Eliminar usuario
+// Eliminar usuario (SIN CAMBIOS)
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
