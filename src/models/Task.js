@@ -1,3 +1,4 @@
+// src/models/Task.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
@@ -19,6 +20,10 @@ const Task = sequelize.define('Task', {
   isComplete: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
   }
 });
 
