@@ -1,7 +1,7 @@
 import User from '../models/User.js';
-import Task from '../models/Task.js'; // NUEVO
+import Task from '../models/Task.js'; 
 
-// Crear usuario (SIN CAMBIOS)
+// Crear usuario 
 export const createUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -29,10 +29,10 @@ export const createUser = async (req, res) => {
 };
 
 // Obtener todos los usuarios
-export const getUsers = async (req, res) => {
+export const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      include: { model: Task } // NUEVO
+      include: { model: Task } 
     });
     return res.status(200).json({ data: users });
   } catch (error) {
@@ -45,7 +45,7 @@ export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findByPk(id, {
-      include: { model: Task } // NUEVO
+      include: { model: Task } 
     });
 
     if (!user) {
@@ -58,7 +58,7 @@ export const getUserById = async (req, res) => {
   }
 };
 
-// Actualizar usuario (SIN CAMBIOS)
+// Actualizar usuario 
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -93,7 +93,7 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// Eliminar usuario (SIN CAMBIOS)
+// Eliminar usuario 
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;

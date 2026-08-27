@@ -1,10 +1,10 @@
-# Práctica CRUD de Tareas y Usuarios con Backend usando Sequelize
+# Práctica de Validaciones con Express Validator
 
-Proyecto backend desarrollado para la materia de Instituto Politécnico Formosa (IPF). Consiste en una API REST que permite gestionar **usuarios** y **tareas**, implementando operaciones CRUD completas (Crear, Leer, Actualizar, Eliminar) con Node.js, Express, MySQL y Sequelize ORM.
+Proyecto backend desarrollado para la materia de Instituto Politécnico Formosa (IPF). Partiendo de la práctica anterior de relaciones con Sequelize, se incorporó la librería **express-validator** para implementar validaciones de entrada en los controladores ya desarrollados. La API gestiona **usuarios**, **tareas**, **perfiles** y **tags**, con operaciones CRUD sobre Node.js, Express, MySQL y Sequelize ORM.
 
 ## 📋 Objetivo
 
-Desarrollar una aplicación backend que permita realizar operaciones CRUD para gestionar tareas y usuarios, utilizando Node.js, Express, MySQL y Sequelize ORM, aplicando buenas prácticas de control de versiones con Git y GitHub.
+Incorporar validaciones de entrada con `express-validator` sobre un proyecto backend ya funcional, centralizando el manejo de errores de validación mediante un middleware reutilizable, y aplicando buenas prácticas de control de versiones con Git y GitHub.
 
 ## 🛠️ Tecnologías utilizadas
 
@@ -12,29 +12,45 @@ Desarrollar una aplicación backend que permita realizar operaciones CRUD para g
 - **Express** — framework para manejar rutas y peticiones HTTP
 - **MySQL** — sistema de base de datos relacional
 - **Sequelize** — ORM para conectar y trabajar con la base de datos desde JavaScript
+- **express-validator** — validación y saneamiento de datos de entrada en la API
 - **dotenv** — manejo de variables de entorno
 - **nodemon** — reinicio automático del servidor en desarrollo
 
 ## 📁 Estructura del proyecto
 
+```
 practica-tasks-soria-maximiliano/
 ├── src/
-│ ├── config/
-│ │ └── database.js # Conexión a MySQL con Sequelize
-│ ├── models/
-│ │ ├── User.js # Modelo de Usuario
-│ │ └── Task.js # Modelo de Tarea
-│ ├── controllers/
-│ │ ├── userController.js # Lógica CRUD de usuarios
-│ │ └── taskController.js # Lógica CRUD de tareas
-│ └── routes/
-│ ├── userRoutes.js # Rutas de usuarios
-│ └── taskRoutes.js # Rutas de tareas
-├── app.js # Punto de entrada de la aplicación
-├── .env # Variables de entorno (no se sube)
-├── .env.example # Ejemplo de variables necesarias
+│   ├── config/
+│   │   └── database.js          # Conexión a MySQL con Sequelize
+│   ├── models/
+│   │   ├── User.js              # Modelo de Usuario
+│   │   ├── Task.js              # Modelo de Tarea
+│   │   ├── Profile.js           # Modelo de Perfil (relación 1:1 con User)
+│   │   └── Tag.js               # Modelo de Tag (relación N:N con Task)
+│   ├── controllers/
+│   │   ├── userController.js    # Lógica CRUD de usuarios
+│   │   ├── taskController.js    # Lógica CRUD de tareas
+│   │   ├── profileController.js # Lógica de perfiles
+│   │   └── tagController.js     # Lógica de tags
+│   ├── middlewares/
+│   │   ├── handleValidationErrors.js   # Middleware centralizado de errores de validación
+│   │   └── validators/
+│   │       ├── userValidator.js
+│   │       ├── taskValidator.js
+│   │       ├── profileValidator.js
+│   │       └── tagValidator.js
+│   └── routes/
+│       ├── userRoutes.js
+│       ├── taskRoutes.js
+│       ├── profileRoutes.js
+│       └── tagRoutes.js
+├── app.js                       # Punto de entrada de la aplicación
+├── .env                         # Variables de entorno (no se sube)
+├── .env.example                 # Ejemplo de variables necesarias
 ├── .gitignore
 └── package.json
+```
 
 ## ⚙️ Instalación y configuración
 
@@ -51,6 +67,8 @@ cd practica-tasks-soria-maximiliano
 npm install
 ```
 
+Esto instala, entre otras, la librería `express-validator` usada para las validaciones.
+
 ### 3. Crear la base de datos
 
 Con MySQL corriendo (WampServer, XAMPP, etc.), crear la base de datos:
@@ -65,12 +83,14 @@ Las tablas se crean automáticamente al iniciar el proyecto, gracias a `sequeliz
 
 Crear un archivo `.env` en la raíz del proyecto, copiando el formato de `.env.example`:
 
+```
 DB_HOST=localhost
 DB_NAME=tasks_users_db
 DB_USER=root
 DB_PASSWORD=
 DB_PORT=3306
 PORT=3000
+```
 
 ### 5. Iniciar el servidor
 
@@ -84,54 +104,81 @@ El servidor va a correr en `http://localhost:3000`.
 
 ### Usuarios
 
-| Método | Ruta             | Descripción                |
-| ------ | ---------------- | -------------------------- |
-| POST   | `/api/users`     | Crear un nuevo usuario     |
-| GET    | `/api/users`     | Obtener todos los usuarios |
-| GET    | `/api/users/:id` | Obtener un usuario por ID  |
-| PUT    | `/api/users/:id` | Actualizar un usuario      |
-| DELETE | `/api/users/:id` | Eliminar un usuario        |
+| Método | Ruta             | Descripción                 | Validaciones                          |
+| ------ | ---------------- | ---------------------------- | -------------------------------------- |
+| POST   | `/api/users`     | Crear un nuevo usuario       | Campos obligatorios, formato, unicidad |
+| GET    | `/api/users`     | Obtener todos los usuarios   | —                                       |
+| GET    | `/api/users/:id` | Obtener un usuario por ID    | ID entero positivo, existencia         |
+| PUT    | `/api/users/:id` | Actualizar un usuario        | ID existente, campos opcionales válidos|
+| DELETE | `/api/users/:id` | Eliminar un usuario          | ID entero positivo, existencia         |
 
 **Campos del modelo User:**
 
 - `name` (string, obligatorio, máx. 100 caracteres)
-- `email` (string, obligatorio, único, máx. 100 caracteres)
-- `password` (string, obligatorio, máx. 100 caracteres)
+- `email` (string, obligatorio, único, formato de email válido, máx. 100 caracteres)
+- `password` (string, obligatorio, mínimo 6 caracteres)
 
 ### Tareas
 
-| Método | Ruta             | Descripción              |
-| ------ | ---------------- | ------------------------ |
-| POST   | `/api/tasks`     | Crear una nueva tarea    |
-| GET    | `/api/tasks`     | Obtener todas las tareas |
-| GET    | `/api/tasks/:id` | Obtener una tarea por ID |
-| PUT    | `/api/tasks/:id` | Actualizar una tarea     |
-| DELETE | `/api/tasks/:id` | Eliminar una tarea       |
+| Método | Ruta             | Descripción              | Validaciones                              |
+| ------ | ---------------- | ------------------------- | ------------------------------------------ |
+| POST   | `/api/tasks`     | Crear una nueva tarea     | Campos obligatorios, unicidad, `userId` existente |
+| GET    | `/api/tasks`     | Obtener todas las tareas  | —                                            |
+| GET    | `/api/tasks/:id` | Obtener una tarea por ID  | ID entero positivo, existencia               |
+| PUT    | `/api/tasks/:id` | Actualizar una tarea      | ID existente, campos opcionales válidos      |
+| DELETE | `/api/tasks/:id` | Eliminar una tarea        | ID entero positivo, existencia               |
 
 **Campos del modelo Task:**
 
 - `title` (string, obligatorio, único, máx. 100 caracteres)
 - `description` (string, obligatorio, máx. 100 caracteres)
 - `isComplete` (booleano, por defecto `false`)
+- `userId` (entero, obligatorio, debe existir en la tabla de usuarios)
 
-## ✅ Validaciones implementadas
+### Perfiles
 
-- Verificación de campos obligatorios y longitud máxima
-- Verificación de unicidad (email de usuario, título de tarea) antes de crear o editar
-- Verificación de existencia previa antes de editar o eliminar un recurso
-- Respuestas con códigos HTTP apropiados: `200`, `201`, `400`, `404`, `500`
-- Manejo de errores con `try-catch` en todos los controladores
+| Método | Ruta            | Descripción              | Validaciones                                    |
+| ------ | --------------- | ------------------------- | ------------------------------------------------ |
+| POST   | `/api/profiles` | Crear un nuevo perfil     | `userId` obligatorio y existente, un perfil por usuario (1:1) |
+| GET    | `/api/profiles` | Obtener todos los perfiles| —                                                  |
+
+**Campos del modelo Profile:**
+
+- `bio` (string, opcional, máx. 300 caracteres)
+- `userId` (entero, obligatorio, único — relación 1:1 con User)
+
+### Tags
+
+| Método | Ruta       | Descripción            | Validaciones                          |
+| ------ | ---------- | ----------------------- | -------------------------------------- |
+| POST   | `/api/tags`| Crear un nuevo tag      | Campo obligatorio, longitud, unicidad  |
+| GET    | `/api/tags`| Obtener todos los tags  | —                                        |
+
+**Campos del modelo Tag:**
+
+- `name` (string, obligatorio, único, entre 2 y 20 caracteres)
+
+## ✅ Validaciones implementadas con express-validator
+
+- **Middleware centralizado** (`handleValidationErrors.js`): recolecta los errores generados por `express-validator` y responde con `400` en formato JSON uniforme, evitando repetir esa lógica en cada controlador.
+- **IDs en parámetros**: se valida que sean enteros positivos y que el recurso exista en la base de datos mediante validaciones `custom`.
+- **Campos obligatorios**: validados con `notEmpty()` y `isLength()` según el tipo de dato.
+- **Campos con unicidad**: validaciones `custom` que consultan la base de datos antes de crear o actualizar (email de usuario, título de tarea, nombre de tag, perfil único por usuario).
+- **Validaciones personalizadas por modelo**: por ejemplo, que un usuario no pueda tener más de un perfil (relación 1:1), o que `isComplete` sea estrictamente booleano.
+- Respuestas con códigos HTTP apropiados: `200` (consultas/actualizaciones), `201` (creación), `400` (errores de validación), `404` (recurso inexistente), `500` (errores inesperados del servidor).
+- Manejo de errores con `try-catch` en todos los controladores.
 
 ## 🌿 Flujo de trabajo con Git
 
 El proyecto se versionó siguiendo un flujo de ramas:
 
-- **`main`**: rama principal, contiene la versión final del proyecto
-- **`develop`**: rama de integración donde se consolidó el trabajo de las ramas feature
-- **`feature/endpoints`**: desarrollo de modelos, controladores y rutas de la API
-- **`feature/env-config`**: implementación de variables de entorno con dotenv
+- **`main`**: rama principal, contiene la versión final del proyecto.
+- **`develop`**: rama de integración donde se consolidó el trabajo de las ramas feature.
+- **`feature/endpoints`**: desarrollo de modelos, controladores y rutas de la API (práctica de Sequelize).
+- **`feature/env-config`**: implementación de variables de entorno con dotenv.
+- **`validaciones`**: incorporación de `express-validator` y el middleware de manejo de errores sobre los controladores ya existentes.
 
-Cada rama feature se creó a partir de `develop`, y una vez finalizado y probado el trabajo, se mergeó de vuelta a `develop`. Al finalizar todo, se hizo el merge final de `develop` hacia `main`.
+Cada rama se creó a partir de `develop`, y una vez finalizado y probado el trabajo, se mergeó de vuelta a `develop`. Al finalizar, se hizo el merge de `develop` hacia `main` para mantener ambas ramas sincronizadas.
 
 ## 🔐 Investigación adicional: uso de dotenv
 
@@ -151,23 +198,27 @@ npm install dotenv
 
 1. Se crea un archivo `.env` en la raíz del proyecto, con las variables en formato `CLAVE=valor`:
 
+```
 DB_HOST=localhost
 DB_NAME=tasks_users_db
 DB_USER=root
 DB_PASSWORD=
 DB_PORT=3306
 PORT=3000
+```
 
 2. Se agrega `.env` al archivo `.gitignore`, para que nunca se suba al repositorio (contiene datos sensibles).
 
 3. Se crea un archivo `.env.example`, con el mismo formato pero sin los valores reales, para que cualquier persona que clone el proyecto sepa qué variables necesita configurar:
 
+```
 DB_HOST=
 DB_NAME=
 DB_USER=
 DB_PASSWORD=
 DB_PORT=
 PORT=
+```
 
 ### ¿Cómo se accede a las variables desde el código?
 

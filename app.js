@@ -11,10 +11,10 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-app.use('/api/users', userRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use("/api/profiles", profileRoutes);
-app.use("/api/tags", tagRoutes);
+app.use('/users', userRoutes);
+app.use('/tasks', taskRoutes);
+app.use("/profiles", profileRoutes);
+app.use("/tags", tagRoutes);
 
 const startServer = async () => {
   try {

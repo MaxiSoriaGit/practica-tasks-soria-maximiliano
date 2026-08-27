@@ -16,12 +16,12 @@ export const createTask = async (req, res) => {
       return res.status(400).json({ message: 'El estado de la tarea debe ser un valor booleano' });
     }
 
-    // NUEVO: no se puede crear una tarea sin usuario
+    //no se puede crear una tarea sin usuario
     if (!userId) {
       return res.status(400).json({ message: 'El userId es obligatorio para crear una tarea' });
     }
 
-    // NUEVO: verificar que el usuario exista
+    //verificar que el usuario exista
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: 'El usuario indicado no existe' });
@@ -43,7 +43,7 @@ export const createTask = async (req, res) => {
 export const getTasks = async (req, res) => {
   try {
     const tasks = await Task.findAll({
-      include: { model: User, attributes: ['id', 'name', 'email'] } // NUEVO
+      include: { model: User, attributes: ['id', 'name', 'email'] } 
     });
     return res.status(200).json({ data: tasks });
   } catch (error) {
@@ -56,7 +56,7 @@ export const getTaskById = async (req, res) => {
   try {
     const { id } = req.params;
     const task = await Task.findByPk(id, {
-      include: { model: User, attributes: ['id', 'name', 'email'] } // NUEVO
+      include: { model: User, attributes: ['id', 'name', 'email'] } 
     });
 
     if (!task) {
@@ -69,7 +69,7 @@ export const getTaskById = async (req, res) => {
   }
 };
 
-// Actualizar tarea (SIN CAMBIOS)
+// Actualizar tarea
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
@@ -104,7 +104,7 @@ export const updateTask = async (req, res) => {
   }
 };
 
-// Eliminar tarea (SIN CAMBIOS)
+// Eliminar tarea
 export const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
