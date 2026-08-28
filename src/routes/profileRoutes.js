@@ -5,7 +5,9 @@ import { handleValidationErrors } from '../middlewares/handleValidationErrors.js
 
 const router = Router();
 
-router.post("/api", validateCreateProfile, handleValidationErrors, createProfile);
-router.get("/api", getProfiles);
-
+router.get('/profiles', getAllProfiles);
+router.post('/profiles', validateCreateProfile, handleValidationErrors, createProfile);
+router.get('/profiles/:id', validateProfileId, handleValidationErrors, getProfileById);
+router.put('/profiles/:id', validateProfileId, validateUpdateProfile, handleValidationErrors, updateProfile);
+router.delete('/profiles/:id', validateProfileId, handleValidationErrors, deleteProfile);
 export default router;

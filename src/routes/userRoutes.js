@@ -5,10 +5,19 @@ import { handleValidationErrors } from '../middlewares/handleValidationErrors.js
 
 const router = Router();
 
-router.get('/api', getAllUsers);
-router.post('/api', validateCreateUser, handleValidationErrors, createUser);
-router.get('/api', validateUserId, handleValidationErrors, getUserById);
-router.put('/api', validateUpdateUser, handleValidationErrors, updateUser);
-router.delete('/api', validateUserId, handleValidationErrors, deleteUser);
+// Obtener todos los usuarios
+router.get('/users', getAllUsers);
+
+// Crear un usuario nuevo
+router.post('/users', validateCreateUser, handleValidationErrors, createUser);
+
+// Obtener un usuario por ID
+router.get('/users/:id', validateUserId, handleValidationErrors, getUserById);
+
+// Actualizar un usuario por ID
+router.put('/users/:id', validateUserId, validateUpdateUser, handleValidationErrors, updateUser);
+
+// Eliminar un usuario por ID (Eliminación lógica con paranoid)
+router.delete('/users/:id', validateUserId, handleValidationErrors, deleteUser);
 
 export default router;

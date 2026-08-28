@@ -5,10 +5,10 @@ import { handleValidationErrors } from '../middlewares/handleValidationErrors.js
 
 const router = Router();
 
-router.post('/api',validateCreateTask, handleValidationErrors , createTask);
-router.get('/api',getTasks);
-router.get('/api', validateTaskId, handleValidationErrors ,getTaskById);
-router.put('/api', validateUpdateTask, handleValidationErrors,updateTask);
-router.delete('/api', validateTaskId, handleValidationErrors,deleteTask);
+router.get('/tasks', getAllTasks);
+router.post('/tasks', validateCreateTask, handleValidationErrors, createTask);
+router.get('/tasks/:id', validateTaskId, handleValidationErrors, getTaskById);
+router.put('/tasks/:id', validateTaskId, validateUpdateTask, handleValidationErrors, updateTask);
+router.delete('/tasks/:id', validateTaskId, handleValidationErrors, deleteTask);
 
 export default router;
