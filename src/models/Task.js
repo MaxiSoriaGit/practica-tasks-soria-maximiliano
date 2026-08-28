@@ -1,4 +1,3 @@
-// src/models/Task.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
@@ -25,6 +24,11 @@ const Task = sequelize.define('Task', {
     type: DataTypes.INTEGER,
     allowNull: false
   }
+  }, {
+  timestamps: true, // Requerido para paranoid
+  paranoid: true    //agrega deletedAt
 });
+
+
 
 export default Task;

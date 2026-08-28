@@ -5,7 +5,7 @@ import { handleValidationErrors } from '../middlewares/handleValidationErrors.js
 
 const router = Router();
 
-router.get('/tasks', getAllTasks);
+router.get('/tasks', getTasks);
 router.post('/tasks', validateCreateTask, handleValidationErrors, createTask);
 router.get('/tasks/:id', validateTaskId, handleValidationErrors, getTaskById);
 router.put('/tasks/:id', validateTaskId, validateUpdateTask, handleValidationErrors, updateTask);
