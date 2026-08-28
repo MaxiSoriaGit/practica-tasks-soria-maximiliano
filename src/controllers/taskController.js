@@ -1,5 +1,6 @@
 import Task from '../models/Task.js';
 import User from '../models/User.js';
+import { matchedData } from 'express-validator';
 
 // Crear tarea
 export const createTask = async (req, res) => {
@@ -16,12 +17,12 @@ export const createTask = async (req, res) => {
       return res.status(400).json({ message: 'El estado de la tarea debe ser un valor booleano' });
     }
 
-    // NUEVO: no se puede crear una tarea sin usuario
+    //no se puede crear una tarea sin usuario
     if (!userId) {
       return res.status(400).json({ message: 'El userId es obligatorio para crear una tarea' });
     }
 
-    // NUEVO: verificar que el usuario exista
+    //verificar que el usuario exista
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: 'El usuario indicado no existe' });
@@ -43,7 +44,7 @@ export const createTask = async (req, res) => {
 export const getTasks = async (req, res) => {
   try {
     const tasks = await Task.findAll({
-      include: { model: User, attributes: ['id', 'name', 'email'] } // NUEVO
+      include: { model: User, attributes: ['id', 'name', 'email'] } 
     });
     return res.status(200).json({ data: tasks });
   } catch (error) {
@@ -56,7 +57,7 @@ export const getTaskById = async (req, res) => {
   try {
     const { id } = req.params;
     const task = await Task.findByPk(id, {
-      include: { model: User, attributes: ['id', 'name', 'email'] } // NUEVO
+      include: { model: User, attributes: ['id', 'name', 'email'] } 
     });
 
     if (!task) {
@@ -69,42 +70,26 @@ export const getTaskById = async (req, res) => {
   }
 };
 
-// Actualizar tarea (SIN CAMBIOS)
-export const updateTask = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, description, isComplete } = req.body;
-
-    const task = await Task.findByPk(id);
-    if (!task) {
-      return res.status(404).json({ message: 'Tarea no encontrada' });
-    }
-
-    if (title !== undefined && (title.trim() === '' || title.length > 100)) {
-      return res.status(400).json({ message: 'El título debe ser válido y de máximo 100 caracteres' });
-    }
-    if (description !== undefined && (description.trim() === '' || description.length > 100)) {
-      return res.status(400).json({ message: 'La descripción debe ser válida y de máximo 100 caracteres' });
-    }
-    if (isComplete !== undefined && typeof isComplete !== 'boolean') {
-      return res.status(400).json({ message: 'El estado de la tarea debe ser un valor booleano' });
-    }
-
-    if (title && title !== task.title) {
-      const existingTask = await Task.findOne({ where: { title } });
-      if (existingTask) {
-        return res.status(400).json({ message: 'Ya existe una tarea con ese título' });
-      }
-    }
-
-    await task.update({ title, description, isComplete });
-    return res.status(200).json({ message: 'Tarea actualizada con éxito', data: task });
-  } catch (error) {
-    return res.status(500).json({ message: 'Error al actualizar la tarea', error: error.message });
-  }
+// Actualizar tarea
+export const updateTask = async (req, res) => { 
+  try { 
+    const { id } = req.params; 
+    const task = await Task.findByPk(id); 
+    if (!task) { 
+      return res.status(404).json({ message: 'Tarea no encontrada' }); 
+    } 
+ 
+    // Obtener solo los datos validados y presentes 
+    const data = matchedData(req, { locations: ['body'] }); 
+    await task.update(data); 
+ 
+    return res.status(200).json({ message: 'Tarea actualizada con éxito', data: task }); 
+  } catch (error) { 
+    return res.status(500).json({ message: 'Error al actualizar la tarea', error: error.message }); 
+  } 
 };
 
-// Eliminar tarea (SIN CAMBIOS)
+// Eliminar tarea
 export const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;

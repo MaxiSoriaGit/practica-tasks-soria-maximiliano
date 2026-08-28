@@ -30,3 +30,47 @@ export const getTags = async (req, res) => {
     res.status(500).json({ message: "Error al obtener las etiquetas", error: error.message });
   }
 };
+
+// Obtener tag por ID
+export const getTagById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tag = await Tag.findByPk(id);
+    if (!tag) {
+      return res.status(404).json({ message: "Etiqueta no encontrada" });
+    }
+    return res.status(200).json(tag);
+  } catch (error) {
+    return res.status(500).json({ message: "Error al obtener la etiqueta", error: error.message });
+  }
+};
+
+// Actualizar tag
+export const updateTag = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tag = await Tag.findByPk(id);
+    if (!tag) {
+      return res.status(404).json({ message: "Etiqueta no encontrada" });
+    }
+    await tag.update(req.body);
+    return res.status(200).json({ message: "Etiqueta actualizada", tag });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al actualizar la etiqueta", error: error.message });
+  }
+};
+
+// Eliminar tag
+export const deleteTag = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tag = await Tag.findByPk(id);
+    if (!tag) {
+      return res.status(404).json({ message: "Etiqueta no encontrada" });
+    }
+    await tag.destroy();
+    return res.status(200).json({ message: "Etiqueta eliminada correctamente" });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al eliminar la etiqueta", error: error.message });
+  }
+};
