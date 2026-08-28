@@ -1,17 +1,18 @@
-# Práctica de Validaciones con Express Validator
+# Práctica de Eliminación Lógica y Actualizaciones
 
-Proyecto backend desarrollado para la materia de Instituto Politécnico Formosa (IPF). Consiste en una API REST que permite gestionar usuarios y tareas, implementando operaciones CRUD completas (Crear, Leer, Actualizar, Eliminar) con Node.js, Express, MySQL y Sequelize ORM.
+Proyecto backend desarrollado para la materia de Instituto Politécnico Formosa (IPF). Consiste en una API REST que permite gestionar usuarios, tareas, perfiles y tags, implementando operaciones CRUD completas (Crear, Leer, Actualizar, Eliminar) con Node.js, Express, MySQL y Sequelize ORM. Sobre la base de la práctica de validaciones con `express-validator`, se incorporó **eliminación lógica** en el modelo `Task` y se agregaron **validaciones para las rutas de actualización** utilizando `.optional()` y `matchedData()`.
 
 ## 📋 Objetivo
 
-Desarrollar una aplicación backend que permita realizar operaciones CRUD para gestionar tareas y usuarios, utilizando Node.js, Express, MySQL y Sequelize ORM, aplicando buenas prácticas de control de versiones con Git y GitHub.
+Incorporar eliminación lógica en al menos un modelo del proyecto, y agregar validaciones para las rutas de actualización (`PUT`) utilizando `.optional()` en `express-validator` y `matchedData()` en los controladores, de forma que solo se actualicen los campos enviados y validados por el cliente, aplicando buenas prácticas de control de versiones con Git y GitHub.
 
 ## 🛠️ Tecnologías utilizadas
 
 - **Node.js** — entorno de ejecución de JavaScript en el servidor
 - **Express** — framework para manejar rutas y peticiones HTTP
 - **MySQL** — sistema de base de datos relacional
-- **Sequelize** — ORM para conectar y trabajar con la base de datos desde JavaScript
+- **Sequelize** — ORM para conectar y trabajar con la base de datos desde JavaScript (incluye soporte nativo de eliminación lógica vía `paranoid`)
+- **express-validator** — validación y saneamiento de datos de entrada en la API
 - **dotenv** — manejo de variables de entorno
 - **nodemon** — reinicio automático del servidor en desarrollo
 
@@ -24,13 +25,26 @@ practica-tasks-soria-maximiliano/
 │ │ └── database.js # Conexión a MySQL con Sequelize
 │ ├── models/
 │ │ ├── User.js # Modelo de Usuario
-│ │ └── Task.js # Modelo de Tarea
+│ │ ├── Task.js # Modelo de Tarea (paranoid: eliminación lógica)
+│ │ ├── Profile.js # Modelo de Perfil (relación 1:1 con User)
+│ │ └── Tag.js # Modelo de Tag (relación N:N con Task)
 │ ├── controllers/
-│ │ ├── userController.js # Lógica CRUD de usuarios
-│ │ └── taskController.js # Lógica CRUD de tareas
+│ │ ├── userController.js # CRUD de usuarios (update con matchedData)
+│ │ ├── taskController.js # CRUD de tareas (update con matchedData, delete lógico)
+│ │ ├── profileController.js # CRUD de perfiles (update/delete agregados)
+│ │ └── tagController.js # CRUD de tags (update/delete agregados)
+│ ├── middlewares/
+│ │ ├── handleValidationErrors.js # Middleware centralizado de errores de validación
+│ │ └── validators/
+│ │ ├── userValidator.js
+│ │ ├── taskValidator.js
+│ │ ├── profileValidator.js
+│ │ └── tagValidator.js
 │ └── routes/
 │ ├── userRoutes.js # Rutas de usuarios
-│ └── taskRoutes.js # Rutas de tareas
+│ ├── taskRoutes.js # Rutas de tareas
+│ ├── profileRoutes.js # Rutas de perfiles
+│ └── tagRoutes.js # Rutas de tags
 ├── app.js # Punto de entrada de la aplicación
 ├── .env # Variables de entorno (no se sube)
 ├── .env.example # Ejemplo de variables necesarias
@@ -63,7 +77,7 @@ Con MySQL corriendo (WampServer, XAMPP, etc.), crear la base de datos:
 CREATE DATABASE tasks_users_db;
 ```
 
-Las tablas se crean automáticamente al iniciar el proyecto, gracias a `sequelize.sync({ alter: true })`.
+Las tablas se crean y actualizan automáticamente al iniciar el proyecto, gracias a `sequelize.sync({ alter: true })` (incluye la columna `deletedAt` que agrega el modo `paranoid` en Task).
 
 ### 4. Configurar variables de entorno
 
@@ -98,43 +112,79 @@ Todas las relaciones están definidas en `src/models/index.js`.
 
 ### Usuarios
 
-| Método | Ruta             | Descripción                |
-| ------ | ---------------- | -------------------------- |
-| POST   | `/api/users`     | Crear un nuevo usuario     |
-| GET    | `/api/users`     | Obtener todos los usuarios |
-| GET    | `/api/users/:id` | Obtener un usuario por ID  |
-| PUT    | `/api/users/:id` | Actualizar un usuario      |
-| DELETE | `/api/users/:id` | Eliminar un usuario        |
+| Método | Ruta             | Descripción                | Validaciones                                     |
+| ------ | ---------------- | -------------------------- | ------------------------------------------------- |
+| POST   | `/api/users`     | Crear un nuevo usuario     | Campos obligatorios, formato, unicidad             |
+| GET    | `/api/users`     | Obtener todos los usuarios | —                                                   |
+| GET    | `/api/users/:id` | Obtener un usuario por ID  | ID entero positivo, existencia                     |
+| PUT    | `/api/users/:id` | Actualizar un usuario      | ID existente, campos opcionales, `matchedData()`   |
+| DELETE | `/api/users/:id` | Eliminar un usuario        | ID entero positivo, existencia                     |
 
 Campos del modelo User:
 
-- `name` (string, obligatorio, máx. 100 caracteres)
-- `email` (string, obligatorio, único, formato de email válido, máx. 100 caracteres)
+- `name` (string, obligatorio, entre 3 y 100 caracteres)
+- `email` (string, obligatorio, único, formato de email válido)
 - `password` (string, obligatorio, mínimo 6 caracteres)
 
 ### Tareas
 
-| Método | Ruta             | Descripción              |
-| ------ | ---------------- | ------------------------ |
-| POST   | `/api/tasks`     | Crear una nueva tarea    |
-| GET    | `/api/tasks`     | Obtener todas las tareas |
-| GET    | `/api/tasks/:id` | Obtener una tarea por ID |
-| PUT    | `/api/tasks/:id` | Actualizar una tarea     |
-| DELETE | `/api/tasks/:id` | Eliminar una tarea       |
+| Método | Ruta             | Descripción              | Validaciones                                       |
+| ------ | ---------------- | ------------------------ | --------------------------------------------------- |
+| POST   | `/api/tasks`     | Crear una nueva tarea    | Campos obligatorios, unicidad, `userId` existente    |
+| GET    | `/api/tasks`     | Obtener todas las tareas | Excluye automáticamente las tareas eliminadas lógicamente |
+| GET    | `/api/tasks/:id` | Obtener una tarea por ID | ID entero positivo, existencia                       |
+| PUT    | `/api/tasks/:id` | Actualizar una tarea     | ID existente, campos opcionales, `matchedData()`     |
+| DELETE | `/api/tasks/:id` | Eliminar una tarea (**eliminación lógica**) | ID entero positivo, existencia   |
 
 **Campos del modelo Task:**
 
-- `title` (string, obligatorio, único, máx. 100 caracteres)
-- `description` (string, obligatorio, máx. 100 caracteres)
+- `title` (string, obligatorio, único, entre 3 y 100 caracteres)
+- `description` (string, opcional, máx. 500 caracteres)
 - `isComplete` (booleano, por defecto `false`)
+- `userId` (entero, obligatorio, debe existir en la tabla de usuarios)
+- `deletedAt` (agregado automáticamente por Sequelize al activar `paranoid: true`; no se declara manualmente en el modelo)
+
+> **Eliminación lógica:** el modelo `Task` tiene `paranoid: true` y `timestamps: true`. Al llamar a `task.destroy()`, Sequelize no borra la fila: completa `deletedAt` con la fecha y hora actuales. Las consultas estándar (`findAll`, `findByPk`) excluyen automáticamente los registros eliminados, preservando el historial de datos.
+
+### Perfiles
+
+| Método | Ruta                | Descripción                | Validaciones                                              |
+| ------ | ------------------- | --------------------------- | ----------------------------------------------------------- |
+| POST   | `/api/profiles`     | Crear un nuevo perfil       | `userId` obligatorio y existente, un perfil por usuario (1:1) |
+| GET    | `/api/profiles`     | Obtener todos los perfiles  | —                                                              |
+| PUT    | `/api/profiles/:id` | Actualizar un perfil        | ID existente, campos opcionales, `matchedData()`             |
+| DELETE | `/api/profiles/:id` | Eliminar un perfil          | ID entero positivo, existencia                                |
+
+**Campos del modelo Profile:**
+
+- `bio` (string, opcional, máx. 300 caracteres)
+- `avatarUrl` (string, opcional)
+- `userId` (entero, obligatorio, único — relación 1:1 con User)
+
+### Tags
+
+| Método | Ruta            | Descripción            | Validaciones                                  |
+| ------ | --------------- | ----------------------- | ----------------------------------------------- |
+| POST   | `/api/tags`     | Crear un nuevo tag      | Campo obligatorio, longitud, unicidad            |
+| GET    | `/api/tags`     | Obtener todos los tags  | —                                                  |
+| PUT    | `/api/tags/:id` | Actualizar un tag       | ID existente, campo opcional, `matchedData()`    |
+| DELETE | `/api/tags/:id` | Eliminar un tag         | ID entero positivo, existencia                     |
+
+**Campos del modelo Tag:**
+
+- `name` (string, obligatorio, único, entre 2 y 20 caracteres)
 
 ## ✅ Validaciones implementadas
 
-- Verificación de campos obligatorios y longitud máxima
-- Verificación de unicidad (email de usuario, título de tarea) antes de crear o editar
-- Verificación de existencia previa antes de editar o eliminar un recurso
-- Respuestas con códigos HTTP apropiados: `200`, `201`, `400`, `404`, `500`
-- Manejo de errores con `try-catch` en todos los controladores
+- **Middleware centralizado** (`handleValidationErrors.js`): recolecta los errores generados por `express-validator` y responde con `400` en formato JSON uniforme, evitando repetir esa lógica en cada controlador.
+- **IDs en parámetros**: se valida que sean enteros positivos y que el recurso exista en la base de datos mediante validaciones `custom`.
+- **Campos obligatorios en creación**: validados con `notEmpty()`, `isLength()`, `isInt()` o `isEmail()` según el tipo de dato.
+- **Campos opcionales en actualización**: todos los validadores de `PUT` usan `.optional()`, de modo que un campo solo se valida si el cliente lo envía, sin exigir el resto de los campos.
+- **`matchedData()` en los controladores de actualización**: `updateUser`, `updateTask`, `updateProfile` y `updateTag` obtienen únicamente los campos enviados y validados con `matchedData(req, { includeOptionals: false })`, evitando pasar al modelo datos no esperados o no validados provenientes de `req.body`.
+- **Verificación de unicidad** (email de usuario, título de tarea, nombre de tag, perfil único por usuario) antes de crear o editar.
+- **Verificación de existencia previa** antes de editar o eliminar un recurso.
+- Respuestas con códigos HTTP apropiados: `200`, `201`, `400`, `404`, `500`.
+- Manejo de errores con `try-catch` en todos los controladores.
 
 ## 🌿 Flujo de trabajo con Git
 
@@ -144,8 +194,10 @@ El proyecto se versionó siguiendo un flujo de ramas:
 - **`develop`**: rama de integración donde se consolidó el trabajo de las ramas feature
 - **`feature/endpoints`**: desarrollo de modelos, controladores y rutas de la API
 - **`feature/env-config`**: implementación de variables de entorno con dotenv
+- **`validaciones`**: incorporación de `express-validator` y el middleware de manejo de errores sobre los controladores ya existentes
+- **`eliminacion-logica`**: implementación de eliminación lógica (`paranoid`) en el modelo `Task`, agregado de rutas `PUT`/`DELETE` faltantes en `Profile` y `Tag`, y validaciones `.optional()` + `matchedData()` en todos los controladores de actualización
 
-Cada rama feature se creó a partir de `develop`, y una vez finalizado y probado el trabajo, se mergeó de vuelta a `develop`. Al finalizar todo, se hizo el merge final de `develop` hacia `main`.
+Cada rama se creó a partir de `develop`, y una vez finalizado y probado el trabajo, se mergeó de vuelta a `develop`. Al finalizar todo, se hizo el merge final de `develop` hacia `main` para mantener ambas ramas sincronizadas.
 
 ## 🔐 Investigación adicional: uso de dotenv
 
